@@ -14,38 +14,49 @@ export const sendEmail = async ({
 }) => {
   try {
     const hashedToken = await bcryptjs.hash(userId.toString(), 10);
+
     if (emailType === "VERIFY") {
       await User.findByIdAndUpdate(userId, {
-        verifyToken: hashedToken,
-        verifyTokenExpiry: Date.now() + 3600000,
+        $set: {
+          verifyToken: hashedToken,
+          verifyTokenExpiry: new Date(Date.now() + 3600000),
+        }
       });
     } else if (emailType === "RESET") {
       await User.findByIdAndUpdate(userId, {
-        forgotPasswordToken: hashedToken,
-        verifyTokenExpiry: Date.now() + 3600000,
+        $set: {
+          forgotPasswordToken: hashedToken,
+          forgotPasswordTokenExpiry: new Date(Date.now() + 3600000), // expires in 1 hour from now 
+        }
       });
     }
 
     // Create a test account or replace with real credentials.
-    const transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 465,
-      secure: true, // true for 465, false for other ports
+    // Looking to send emails in production? Check out our Email API/SMTP product!
+    const transport = nodemailer.createTransport({
+      host: "sandbox.smtp.mailtrap.io",
+      port: 2525,
       auth: {
-        user: "maddison53@ethereal.email",
-        pass: "jn7jnAPss4f63QBp6D",
+        user: "8af12a05976d2d", //?
+        pass: "56a75d7338d690", // ?
       },
     });
+
+    const verifyEmail = `<p>Click <a href='${process.env.DOMAIN}/verifyemail?token=${hashedToken}'>here</a> to ${
+        emailType === "VERIFY" ? "verify your email" : "reset your password"
+      } or copy and paste the link below in your browser. <br> ${process.env.DOMAIN}/verifyemail?token=${hashedToken} </p>`;
+
+    // const forgotPassword = ;
 
     const mailOptions = {
       from: "akash@123", // sender address
       to: email, // receiver address
       subject:
         emailType === "VERIFY" ? "Verify your email" : "Reset your password",
-      html: "<b>Hello world?</b>", // HTML body
+      html: verifyEmail, // HTML body
     };
 
-    const mailResponse = await transporter.sendMail(mailOptions);
+    const mailResponse = await transport.sendMail(mailOptions);
 
     return mailResponse;
   } catch (error: any) {

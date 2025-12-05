@@ -1,4 +1,4 @@
-import { connectDB } from '@/db/dbConfig';
+import { connectDB } from '@/dbConfig/dbConfig';
 import User from '@/models/userModel';
 import { NextRequest , NextResponse} from 'next/server'
 import bcryptjs from 'bcryptjs';
@@ -6,7 +6,8 @@ import { sendEmail } from '@/helpers/mailer';
 
 connectDB();
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest, response: NextResponse) {
+
     try {
         const reqBody = await request.json();
         const {username, email, password} = reqBody;
